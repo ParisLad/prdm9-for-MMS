@@ -1,31 +1,66 @@
 library(BSgenome.Hsapiens.UCSC.hg19.masked)
 genome <- BSgenome.Hsapiens.UCSC.hg19.masked
-x <- genome$chr1  # Kostas comment: insert chromosome here
-myfile <- paste("C:\\Work\\GeneScreening\\chr1prdm9.bed", sep="") 
-active(masks(x)) <- TRUE
-active(masks(x))["RM"] <- FALSE
-prdm9table <- read.table("C:\\Work\\GeneScreening\\prdm9.txt", header = TRUE)
-for (i in 1:20) # Kostas comment insert for start end for hj
+seqnames <- seqnames(genome)
+prdm9table <- read.table("C:\\Work\\GeneScreening\\prdm9.txt", header =
+TRUE) # Kostas comment: insert prdm9.txt path here
+
+for (i in 1:nrow(prdm9table)) # Kostas comment insert for start end for
+hj
 {
-	print(paste("Run PRDM9 no. ", i, prdm9table$PRDM9[i]))
-	Lpattern <- toString(prdm9table$PRDM9[i])
-	M1 <- matchPattern(Lpattern, x, max.mismatch=0, min.mismatch=0, with.indels=FALSE, fixed=TRUE, algorithm="auto")
-	print(paste("M1 = ", M1))
-	if (length(M1) != 0)
-	{
-		sink(myfile, append=TRUE)
-		chrvalue <- "chr1"
-		for (k in 1:length(M1))
-		{
-			cat(chrvalue)
-			cat("\t")
-			cat(start(M1[k]))
-			cat("\t")
-			cat(end(M1[k]))
-			cat("\t")
-			cat(toString(prdm9table$PRDM9[i]))
-			cat("\n")
-		}
-		sink()
-	}
+
+        for (seqname in seqnames)
+        {
+                x <- genome[[seqname]]
+                active(masks(x)) <- TRUE
+                active(masks(x))["RM"] <- FALSE
+
+                #print(paste("Run PRDM9 no. ", seqname, i, prdm9table$PRDM9[i]))
+                Lpattern <- toString(prdm9table$PRDM9[i])
+                M1 <- matchPattern(Lpattern, x, max.mismatch=0, min.mismatch=0,
+with.indels=FALSE, fixed=TRUE, algorithm="auto")
+                #print(paste("M1 = ", M1))
+                myfile <- paste("C:\\Work\\GeneScreening\\prdm9\\",
+prdm9table$PRDM9[i], ".bed", sep="")
+                sink(myfile, append=TRUE)
+                if (length(M1) != 0)
+                {
+                        chrvalue <- seqname
+                        for (k in 1:length(M1))
+                        {
+                                cat(chrvalue)
+                                cat("\t")
+                                cat(start(M1[k]))
+                                cat("\t")
+                                cat(end(M1[k]))
+                                cat("\t")
+                                cat(toString(prdm9table$PRDM9[i]))
+
+
+                                cat("\n")
+                        }
+                }
+                sink()
+
+
+        }
+
+
+        library("regioneR")
+        test <- import(myfile)
+        test
+        Microdel.hg19_path <- system.file("tests", package = "rtracklayer")
+        Microdel.hg19_bed <- file.path(Microdel.hg19_path, "Microdel.hg19.bed")
+        Microdel.hg19 <- import(Microdel.hg19_bed)
+        Microdel.hg19
+        pt <- overlapPermTest(A=Microdel.hg19, B=test, ntimes=1000)
+        pt
+        lz <- localZScore(pt=pt, A=Microdel.hg19, B=test)
+        plot(lz)
+        plot(pt)
+        output <- overlapRegions(test, Microdel.hg19)
+        output
+
+
+
+
 }

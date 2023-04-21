@@ -1,0 +1,31 @@
+library(BSgenome.Hsapiens.UCSC.hg19.masked)
+genome <- BSgenome.Hsapiens.UCSC.hg19.masked
+x <- genome$chr1  # Kostas comment: insert chromosome here
+myfile <- paste("C:\\Work\\GeneScreening\\chr1prdm9.bed", sep="") 
+active(masks(x)) <- TRUE
+active(masks(x))["RM"] <- FALSE
+prdm9table <- read.table("C:\\Work\\GeneScreening\\prdm9.txt", header = TRUE)
+for (i in 1:20) # Kostas comment insert for start end for hj
+{
+	print(paste("Run PRDM9 no. ", i, prdm9table$PRDM9[i]))
+	Lpattern <- toString(prdm9table$PRDM9[i])
+	M1 <- matchPattern(Lpattern, x, max.mismatch=0, min.mismatch=0, with.indels=FALSE, fixed=TRUE, algorithm="auto")
+	print(paste("M1 = ", M1))
+	if (length(M1) != 0)
+	{
+		sink(myfile, append=TRUE)
+		chrvalue <- "chr1"
+		for (k in 1:length(M1))
+		{
+			cat(chrvalue)
+			cat("\t")
+			cat(start(M1[k]))
+			cat("\t")
+			cat(end(M1[k]))
+			cat("\t")
+			cat(toString(prdm9table$PRDM9[i]))
+			cat("\n")
+		}
+		sink()
+	}
+}
